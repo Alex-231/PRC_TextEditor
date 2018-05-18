@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace TextEditor
 {
@@ -36,6 +37,7 @@ namespace TextEditor
 
         private void openFileDialog_FileOk(object sender, CancelEventArgs e)
         {
+            //Create a new file handler with the path.
             fileHandler = new FileHandler(openFileDialog.FileName);
             textEditorBox.Lines = fileHandler.fileLines;
 
@@ -43,6 +45,7 @@ namespace TextEditor
             //This section is used to control which features are active, and is present in many events.
             //The user can't save if no file is open, so the save button needs to be enabled/disabled appropriately.
             //This is common with many controls.
+
             textEditorBox.Enabled = true;
             saveToolStripMenu.Enabled = true;
             saveAsToolStripMenu.Enabled = true;
@@ -59,6 +62,8 @@ namespace TextEditor
 
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            //If a file is closed, empty the file handler and text box, also disable edit tools.
+
             fileHandler = null;
             textEditorBox.Lines = null;
             textEditorBox.Enabled = false;
@@ -81,6 +86,7 @@ namespace TextEditor
 
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            //Create a new file handler with no path.
             fileHandler = new FileHandler();
             textEditorBox.Text = "";
             textEditorBox.Enabled = true;
@@ -159,6 +165,8 @@ namespace TextEditor
             //}
         }
 
+        #region Not Yet Implemented
+
         private void findAndReplaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //Commented due to: Not Yet Implemented.
@@ -187,6 +195,8 @@ namespace TextEditor
                 }
             }
         }
+
+        #endregion
 
         private void statusBarToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -228,6 +238,26 @@ namespace TextEditor
         }
 
         #endregion
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+
+            //The plan here is to show features that aren't yet finished, if the program is in debug.
+            //For some reason this isn't working. The loop is fine but the controls remain invisable.
+            //Commented due to unknown effects.
+            #if DEBUG
+            foreach (Control control in this.Controls)
+            {
+                //control.Visible = true;
+            }
+            #endif
+        }
+
+        //This event opens the Help document when the user clicks Help.
+        private void helpToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start("help.html");
+        }
 
     }
 }
