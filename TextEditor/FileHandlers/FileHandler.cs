@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace TextEditor
+namespace TextEditor.FileHandlers
 {
     public class FileHandler
     {
@@ -15,7 +15,7 @@ namespace TextEditor
         /// <summary>
         /// Stores the contents of the file being handled.
         /// </summary>
-        public string[] fileLines { get; internal set; }
+        public string[] FileLines { get; internal set; }
 
         /// <summary>
         /// This constructor is used for handling new files which have not been saved yet.
@@ -39,7 +39,7 @@ namespace TextEditor
         /// </summary>
         private void ReadFileAndStoreLinesLocally()
         {
-            fileLines = File.ReadAllLines(filePath);
+            FileLines = File.ReadAllLines(filePath);
         }
 
         /// <summary>

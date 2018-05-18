@@ -7,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using TextEditor.FileHandlers;
+using System.Text.RegularExpressions;
 
 namespace TextEditor
 {
@@ -18,28 +21,42 @@ namespace TextEditor
         public FileHandler fileHandler;
 
         //A property to access textEditorBox.Lines publically.
-        public string[] textBoxLines { get { return this.textEditorBox.Lines; } set {textBoxLines = this.textEditorBox.Lines; } }
+        public string[] TextBoxLines { get { return this.textEditorBox.Lines; } set {TextBoxLines = this.textEditorBox.Lines; } }
 
         public MainForm()
         {
             InitializeComponent();
+            UpdateOptions();
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void UpdateOptions()
+        {
+            if (lineNumbersToolStripMenuItem.Checked)
+                lineNumbersBox.Show();
+            else
+                lineNumbersBox.Hide();
+
+            if (statusBarToolStripMenuItem.Checked)
+                textStatusStrip.Show();
+            else
+                textStatusStrip.Hide();
+        }
+
+        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
         {
             openFileDialog.ShowDialog();
         }
 
-        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             saveFileDialog.ShowDialog();
         }
 
-        private void openFileDialog_FileOk(object sender, CancelEventArgs e)
+        private void OpenFileDialog_FileOk(object sender, CancelEventArgs e)
         {
             //Create a new file handler with the path.
             fileHandler = new FileHandler(openFileDialog.FileName);
-            textEditorBox.Lines = fileHandler.fileLines;
+            textEditorBox.Lines = fileHandler.FileLines;
 
 
             //This section is used to control which features are active, and is present in many events.
@@ -52,15 +69,16 @@ namespace TextEditor
             closeToolStripMenu.Enabled = true;
             findAndReplaceToolStripMenuItem.Enabled = true;
             editToolStripMenuItem.Enabled = true;
-            textEditorBox_TextChanged(null, EventArgs.Empty);
+            filePathLabel.Text = openFileDialog.FileName;
+            TextEditorBox_TextChanged(null, EventArgs.Empty);
         }
 
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             fileHandler.SaveFileToCurrentPath(textEditorBox.Lines);
         }
 
-        private void closeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CloseToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //If a file is closed, empty the file handler and text box, also disable edit tools.
 
@@ -73,18 +91,22 @@ namespace TextEditor
             saveAsToolStripMenu.Enabled = false;
             findAndReplaceToolStripMenuItem.Enabled = false;
             editToolStripMenuItem.Enabled = false;
+            paragraphCountLabel.Text = "0 Paragraphs";
+            wordCountLabel.Text = "0 Words";
             characterCountLabel.Text = "0 Characters";
             linesCountLabel.Text = "0 Lines";
+            filePathLabel.Text = "No File";
         }
 
-        private void saveFileDialog_FileOk(object sender, CancelEventArgs e)
+        private void SaveFileDialog_FileOk(object sender, CancelEventArgs e)
         {
             fileHandler = null;
             fileHandler = new FileHandler(saveFileDialog.FileName);
             fileHandler.SaveFileToCurrentPath(textEditorBox.Lines);
+            filePathLabel.Text = saveFileDialog.FileName;
         }
 
-        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        private void NewToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //Create a new file handler with no path.
             fileHandler = new FileHandler();
@@ -97,7 +119,7 @@ namespace TextEditor
             editToolStripMenuItem.Enabled = true;
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (fileHandler != null || textEditorBox.Lines != null)
             {
@@ -110,129 +132,104 @@ namespace TextEditor
             Environment.Exit(0);
         }
 
-        private void printToolStripMenuItem_Click(object sender, EventArgs e)
+        private void PrintToolStripMenuItem_Click(object sender, EventArgs e)
         {
             printDialog.ShowDialog();
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             AboutBox about = new AboutBox();
             about.ShowDialog();
         }
 
-        private void fontToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FontToolStripMenuItem_Click(object sender, EventArgs e)
         {
             fontDialog.Font = textEditorBox.Font;
             fontDialog.ShowDialog();
             textEditorBox.Font = fontDialog.Font;
         }
 
-        private void lineNumbersToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LineNumbersToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //If the line numbers button is checked, show line numbers. Else, don't.
-            if (lineNumbersToolStripMenuItem.Checked == true)
-            {
-                textBox2.Show();
-            }
-            else
-            {
-                textBox2.Hide();
-            }
-
+            UpdateOptions();
         }
 
-        private void textEditorBox_TextChanged(object sender, EventArgs e)
+        private void TextEditorBox_TextChanged(object sender, EventArgs e)
         {
-            //Commented due to performance issues.
-            //This feature needs to be in a different class, and probably needs a different thread.
-
-            //List<string> lineNumbers = new List<string>();
-            //for(int i = 0; i < textBox1.Lines.Length; i++)
-            //{
-            //    lineNumbers.Add(i.ToString());
-            //}
-            //textBox2.Lines = lineNumbers.ToArray();
+            List<string> lineNumbers = new List<string>();
+            for (int i = 1; i < textEditorBox.Lines.Length + 1; i++)
+            {
+                lineNumbers.Add(i.ToString());
+            }
+            lineNumbersBox.Lines = lineNumbers.ToArray();
 
             this.linesCountLabel.Text = this.textEditorBox.Lines.Count().ToString() + " Lines";
             this.characterCountLabel.Text = this.textEditorBox.Text.Length.ToString() + " Characters";
-            string[] words = this.textEditorBox.Text.Split(new string[] { "[^ ] [^ ]" }, StringSplitOptions.None);
-            this.wordCountLabel.Text = words.Count().ToString();
-
-            //for(int i = 0; i < textBox1.Lines.Length; i++)
-            //{
-            //    textBox2.Lines[textBox2.Lines.Length] = "\n" + i;
-            //}
+            int wordCount = this.textEditorBox.Text.Split(new char[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Count();
+            this.wordCountLabel.Text = wordCount.ToString() + " Words";
+            string[] paragraphs = this.textEditorBox.Text.Split(new string[] { "\r\r", "\n\n", "\r\n\r\n", "\n\r\n\r" }, StringSplitOptions.RemoveEmptyEntries);
+            this.paragraphCountLabel.Text = paragraphs.Count().ToString() + " Paragraphs";
         }
 
-        #region Not Yet Implemented
-
-        private void findAndReplaceToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FindAndReplaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //Commented due to: Not Yet Implemented.
+            FindAndReplaceForm findAndReplaceForm = new FindAndReplaceForm();
+            findAndReplaceForm.ShowDialog();
 
-            //string find;
-            //string replace;
-            //FindAndReplaceForm findAndReplaceForm = new FindAndReplaceForm();
-            //findAndReplaceForm.ShowDialog();
-
-            //FindAndReplaceAll(findAndReplaceForm.find, findAndReplaceForm.replace);
+            FindAndReplaceAll(findAndReplaceForm.Find, findAndReplaceForm.Replace);
+            TextEditorBox_TextChanged(null, EventArgs.Empty);
         }
 
-        /// <summary>
-        /// This is WIP method for the find and replace tool, which was not ready for the release build.
-        /// The feature has been hidden from the form.
-        /// </summary>
-        /// <param name="find"></param>
-        /// <param name="replace"></param>
         public void FindAndReplaceAll(string find, string replace)
         {
-            for (int i = 0; i < textEditorBox.Lines.Count(); i++)
+            if (String.IsNullOrWhiteSpace(find))
+                return;
+
+            if (replace == null)
+                replace = "";
+
+            string[] lines = textEditorBox.Lines;
+
+            for (int i = 0; i < lines.Count(); i++)
             {
-                if(textEditorBox.Lines[i].Contains(find))
+                if(lines[i].Contains(find))
                 {
-                    textEditorBox.Lines[i].Replace(find, replace);
+                    lines[i] = lines[i].Replace(find, replace);
                 }
             }
+
+            textEditorBox.Lines = lines;
         }
 
-        #endregion
-
-        private void statusBarToolStripMenuItem_Click(object sender, EventArgs e)
+        private void StatusBarToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if(statusBarToolStripMenuItem.Checked)
-            {
-                textStatusStrip.Show();
-            }
-            else
-            {
-                textStatusStrip.Hide();
-            }
+            UpdateOptions();
         }
 
         #region Edit Control Events
 
-        private void cutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.textEditorBox.Cut();
         }
 
-        private void copyToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CopyToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.textEditorBox.Copy();
         }
 
-        private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        private void PasteToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.textEditorBox.Paste();
         }
 
-        private void undoToolStripMenuItem_Click(object sender, EventArgs e)
+        private void UndoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.textEditorBox.Undo();
         }
 
-        private void redoToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RedoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.textEditorBox.Redo();
         }
@@ -241,23 +238,38 @@ namespace TextEditor
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-
-            //The plan here is to show features that aren't yet finished, if the program is in debug.
-            //For some reason this isn't working. The loop is fine but the controls remain invisable.
-            //Commented due to unknown effects.
             #if DEBUG
             foreach (Control control in this.Controls)
             {
-                //control.Visible = true;
+                control.Visible = true;
             }
             #endif
         }
 
         //This event opens the Help document when the user clicks Help.
-        private void helpToolStripMenuItem_Click(object sender, EventArgs e)
+        private void HelpToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("help.html");
         }
 
+        [DllImport("user32.dll")]
+        static extern int SetScrollPos(IntPtr handle, int nBar, int nPos, bool bRedraw);
+        [DllImport("User32.Dll", EntryPoint = "PostMessageA")]
+        static extern bool PostMessage(IntPtr handle, uint msg, int wParam, int lParam);
+        [DllImport("User32.dll")]
+        private extern static int GetScrollPos(IntPtr handle, int nBar);
+
+        private void TextEditorBox_VScroll(object sender, EventArgs e)
+        {
+            int verticalPosition = GetScrollPos(textEditorBox.Handle, 1);
+            SetScrollPos(lineNumbersBox.Handle, 0x1, verticalPosition, true);
+            PostMessage(lineNumbersBox.Handle, 0x115, 4 + 0x10000 * verticalPosition, 0);
+        }
+
+        private void AboutButton_Click(object sender, EventArgs e)
+        {
+            AboutBox about = new AboutBox();
+            about.ShowDialog();
+        }
     }
 }

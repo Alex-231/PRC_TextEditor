@@ -11,31 +11,38 @@ namespace TextEditor
 {
     public partial class FindAndReplaceForm : Form
     {
-        public string find;
-        public string replace;
+        public string Find
+        {
+            get { return findBox.Text; }
+            private set { findBox.Text = value; }
+        }
+        public string Replace
+        {
+            get { return replaceBox.Text; }
+            private set { replaceBox.Text = value; }
+        }
+
+        private bool replacing = false;
 
         public FindAndReplaceForm()
         {
-            //Not yet implemented. Ignore what's left here, this class needs redesigning.
-
-            //public string find
-            //{
-            //    get { return textBox1.Text; }
-            //    private set { textBox1.Text = value; }
-            //}
-            //public string replace
-            //{
-            //    get { return textBox2.Text; }
-            //    private set { textBox2.Text = value; }
-            //}
-
+            replacing = false;
             InitializeComponent();
         }
 
-
-        private void button1_Click(object sender, EventArgs e)
+        private void ReplaceAllButton_Click(object sender, EventArgs e)
         {
-            
+            replacing = true;
+            this.Close();
+        }
+
+        private void FindAndReplaceForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (!replacing)
+            {
+                Find = "";
+                Replace = "";
+            }
         }
     }
 }
