@@ -88,6 +88,7 @@
             this.Controls.Add(this.replaceAllButton);
             this.Controls.Add(this.findBox);
             this.Name = "FindAndReplaceForm";
+            this.ShowIcon = false;
             this.Text = "Find and Replace";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FindAndReplaceForm_FormClosing);
             this.ResumeLayout(false);
